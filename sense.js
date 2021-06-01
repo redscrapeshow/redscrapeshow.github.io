@@ -65,7 +65,7 @@ const touchMoveHandler = function(event) {
     handler(y < firstContact.y ? 'down' : 'up');
   } else if (Math.abs(x - firstContact.x) >= swipeThreshold) {
     swiped = true;
-    handler(x > firstContact.x ? 'swipeRight' : 'swipeLeft');
+    handler(x < firstContact.x ? 'swipeRight' : 'swipeLeft');
   }
 };
 
