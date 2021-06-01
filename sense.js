@@ -6,7 +6,6 @@ import {config} from './config.js';
 let handler = undefined;
 
 const goWoke = function(newHandler) {
-  document.querySelector('#log').textContent = 'flappette';
   handler = newHandler;
   window.addEventListener('keydown', keydownHandler);
   const vp = document.querySelector('#main-viewport');
@@ -58,14 +57,12 @@ const swipeThreshold = Math.min(window.innerHeight, window.innerWidth) *
     config.SWIPE_THRESHOLD_FRACTION;
 
 const touchMoveHandler = function(event) {
-  document.querySelector('#log').textContent = 'yay';
   if (swiped) return;
   const x = event.changedTouches[0].clientX;
   const y = event.changedTouches[0].clientY;
-  document.querySelector('#log').textContent = `${x} ${y} ${firstContact.x} ${firstContact.y} ${swipeThreshold}`;
   if (Math.abs(y - firstContact.y) >= swipeThreshold) {
     swiped = true;
-    handler(y > firstContact.y ? 'down' : 'up');
+    handler(y < firstContact.y ? 'down' : 'up');
   } else if (Math.abs(x - firstContact.x) >= swipeThreshold) {
     swiped = true;
     handler(x > firstContact.x ? 'swipeRight' : 'swipeLeft');
