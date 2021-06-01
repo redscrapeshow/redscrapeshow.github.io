@@ -58,11 +58,11 @@ const swipeThreshold = Math.min(window.innerHeight, window.innerWidth) *
     config.SWIPE_THRESHOLD_FRACTION;
 
 const touchMoveHandler = function(event) {
-  document.querySelector('log').textContent = 'yay';
+  document.querySelector('#log').textContent = 'yay';
   if (swiped) return;
   const x = event.changedTouches[0].x;
   const y = event.changedTouches[0].y;
-  document.querySelector('log').textContent = `${x} ${y} ${firstContact.x} ${firstContact.y} ${swipeThreshold}`;
+  document.querySelector('#log').textContent = `${x} ${y} ${firstContact.x} ${firstContact.y} ${swipeThreshold}`;
   if (Math.abs(y - firstContact.y) >= swipeThreshold) {
     swiped = true;
     handler(y > firstContact.y ? 'down' : 'up');
