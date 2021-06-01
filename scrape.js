@@ -102,13 +102,13 @@ const getRelevantPostData =
     });
 
 const isValidURL =
-    (url, imgOnly) => imgOnly ? config.IMAGE_URL_REGEXS : [
+    (url, imgOnly) => (imgOnly ? config.IMAGE_URL_REGEXS : [
       ...config.IMAGE_URL_REGEXS,
       ...config.IMGUR_VIDEO_URL_REGEXS,
       ...config.VREDDIT_URL_REGEXS,
       ...config.GFYCAT_URL_REGEXS,
       ...config.REDGIFS_URL_REGEXS,
-    ].some(regex => regex.test(url));
+    ]).some(regex => regex.test(url));
     
 
 export {createScraper, setVerbose};
