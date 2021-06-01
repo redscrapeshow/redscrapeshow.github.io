@@ -1,12 +1,51 @@
 <!DOCTYPE html>
 <html lang="en-US">
-  <head>
-    <meta charset="utf-8">
-    <meta name="author" content="RedScrapeShow">
-    <meta name="description" content="RedScrapeShow runs a slideshow using content scraped from an input of subreddit names.">
-    <script type="module" src="./main.js"></script>
-    <title>RedScrapeShow</title>
-  </head>
-  <body>
-  </body>
-</html>
+<meta charset="utf-8">
+<meta name="author" content="RedScrapeShow">
+<meta name="description" content="RedScrapeShow runs a slideshow using content scraped from an input of subreddit names.">
+<!--<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi">-->
+<title>RedScrapeShow</title>
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Dosis:wght@200;300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./main.js"></script>
+<div id="main-viewport"></div>
+<form id="settings">
+  <ul>
+    <li><label for="subreddits">Write down a list of subreddit names separated by space (each line will be a separate show)</label>
+    <li><textarea id="subreddits" name="subreddits" rows="3" spellcheck="false" placeholder="aww
+earthporn spaceporn"></textarea>
+    <li><label>Sort by <select name="sortingMethod">
+      <option selected>Hot
+      <option>Top
+      <option>New
+      <option>Rising
+      <option>Controversial
+    </select></label>
+    <label>of <select name="sortingPeriod">
+      <option value="hour">past hour
+      <option value="day">past 24 hours
+      <option value="week" selected>past week
+      <option value="month">past month
+      <option value="year">past year
+      <option value="all">all time
+    </select></label>
+    <li><label><input type="checkbox" name="shuffle" checked>Shuffle subreddits</label>
+    <li><label><input type="checkbox" name="skip" checked>Skip every</label>
+    <label><input type="number" name="timer" value="10" min="0" step="any"> seconds</label>
+    <li><label><input type="checkbox" name="reverse">Go backward to #1</label>
+    <label>from #<input type="number" name="reverseStart" value="10" min="1" step="1"></label>
+    <label>(loop back<input type="checkbox" name="reverseLoop">)</label>
+    <li><button type="button" id="launch">Show must go on!</button>
+    <li><button type="button" id="advanced">Advanced settings</button>
+    <li><label><input type="checkbox" name="imgOnly">Images only (for mobile users)</label>
+    <li><label><input type="checkbox" name="noTrans">Disable transitions (for epilepctic users)</label>
+    <li><label>Preload <input type="number" name="preload" value="3" min="1" step="1"> content backward and forward</label>
+    <li><label>Auto-skip behavior for videos: <select name="videoSkip">
+      <option value="loop" selected>loop videos to last at least as long as images
+      <option value="cut">skip videos like images
+      <option value="once">play videos only once then skip
+    </select></label>
+  </ul>
+</form>

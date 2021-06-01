@@ -1,0 +1,219 @@
+/* Colors */
+
+:root {
+  --indicator: rgba(255, 255, 255, 1);
+  --indicator-shadow: rgba(0, 0, 0, .5);
+  --title-line: rgba(255, 255, 255, 1);
+  --title-line-shadow: rgba(0, 0, 0, .5);
+  --title-line-hover: rgba(200, 200, 200, 1);
+  --title-line-hover-shadow: rgba(0, 0, 0, .5);
+  --title-line-active: rgba(255, 200, 0, 1);
+  --title-line-active-shadow: rgba(0, 0, 0, .5);
+  --subtitle-line: rgba(255, 255, 255, 1);
+  --subtitle-line-shadow: rgba(0, 0, 0, .5);
+  --subtitle-line-link: rgba(200, 200, 200, 1);
+  --subtitle-line-link-shadow: rgba(0, 0, 0, .5);
+  --subtitle-line-hover: rgba(150, 150, 150, 1);
+  --subtitle-line-hover-shadow: rgba(0, 0, 0, .5);
+  --subtitle-line-active: rgba(255, 200, 0, 1);
+  --subtitle-line-active-shadow: rgba(0, 0, 0, .5);
+}
+
+/* Settings */
+
+
+
+/* Slideshow (generated HTML) 
+
+fonts that were finally considered:
+montserrat: stylish, stretched
+fira sans: legible (condensed and extra condensed options)
+nunito sans: scrapbook feeling
+open sans pro: legible + condensed
+dosis: personnality + condensed*/
+
+#main-viewport {
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+}
+
+.media-frame {
+  align-items: center;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 0;
+}
+
+.media {
+  max-height: 100%;
+  max-width: 100%;
+}
+
+@keyframes slide-up-in {
+  from {
+    transform: translate(0, 100%);
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes slide-up-out {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(0, -110%);
+  }
+}
+
+@keyframes slide-down-in {
+  from {
+    transform: translate(0, -100%);
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes slide-down-out {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(0, 110%);
+  }
+}
+
+.caption-frame {
+  align-items: center;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  margin: 0 0 6pt 0;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  z-index: 1;
+}
+
+.indicator {
+  height: 10px;
+  margin: 0 0 2px 0;
+  padding: 0;
+  width: 33%;
+}
+
+.title-line {
+  color: var(--title-line);
+  font: 400 22pt dosis, sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  text-shadow: var(--title-line-shadow) 1px 1px 10px,
+      var(--title-line-shadow) -1px 1px 10px,
+      var(--title-line-shadow) -1px -1px 10px,
+      var(--title-line-shadow) 1px -1px 10px;
+}
+
+.title-line a:link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.title-line a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.title-line a:hover {
+  color: var(--title-line-hover);
+  text-decoration: none;
+  text-shadow: var(--title-line-hover-shadow) 1px 1px 10px,
+      var(--title-line-hover-shadow) -1px 1px 10px,
+      var(--title-line-hover-shadow) -1px -1px 10px,
+      var(--title-line-hover-shadow) 1px -1px 10px;
+}
+
+.title-line a:active {
+  color: var(--title-line-active);
+  text-decoration: none;
+  text-shadow: var(--title-line-active-shadow) 1px 1px 10px,
+      var(--title-line-active-shadow) -1px 1px 10px,
+      var(--title-line-active-shadow) -1px -1px 10px,
+      var(--title-line-active-shadow) 1px -1px 10px;
+}
+
+.subtitle-line {
+  color: var(--subtitle-line);
+  font: 400 12pt dosis, sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  text-shadow: var(--subtitle-line-shadow) 1px 1px 10px,
+      var(--subtitle-line-shadow) -1px 1px 10px,
+      var(--subtitle-line-shadow) -1px -1px 10px,
+      var(--subtitle-line-shadow) 1px -1px 10px;
+}
+
+.subtitle-line a:link {
+  color: var(--subtitle-line-link);
+  text-decoration: none;
+  text-shadow: var(--subtitle-line-link-shadow) 1px 1px 10px,
+      var(--subtitle-line-link-shadow) -1px 1px 10px,
+      var(--subtitle-line-link-shadow) -1px -1px 10px,
+      var(--subtitle-line-link-shadow) 1px -1px 10px;
+}
+
+.subtitle-line a:visited {
+  color: var(--subtitle-line-link);
+  text-decoration: none;
+  text-shadow: var(--subtitle-line-link-shadow) 1px 1px 10px,
+      var(--subtitle-line-link-shadow) -1px 1px 10px,
+      var(--subtitle-line-link-shadow) -1px -1px 10px,
+      var(--subtitle-line-link-shadow) 1px -1px 10px;
+}
+
+.subtitle-line a:hover {
+  color: var(--subtitle-line-hover);
+  text-decoration: none;
+  text-shadow: var(--subtitle-line-hover-shadow) 1px 1px 10px,
+      var(--subtitle-line-hover-shadow) -1px 1px 10px,
+      var(--subtitle-line-hover-shadow) -1px -1px 10px,
+      var(--subtitle-line-hover-shadow) 1px -1px 10px;
+}
+
+.subtitle-line a:active {
+  color: var(--subtitle-line-active);
+  text-decoration: none;
+  text-shadow: var(--subtitle-line-active-shadow) 1px 1px 10px,
+      var(--subtitle-line-active-shadow) -1px 1px 10px,
+      var(--subtitle-line-active-shadow) -1px -1px 10px,
+      var(--subtitle-line-active-shadow) 1px -1px 10px;
+}
+
+.round-number {
+  bottom: 0;
+  color: var(--subtitle-line);
+  font: 400 16pt dosis, sans-serif;
+  margin: 8pt 16pt;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  text-shadow: var(--subtitle-line-shadow) 1px 1px 10px,
+      var(--subtitle-line-shadow) -1px 1px 10px,
+      var(--subtitle-line-shadow) -1px -1px 10px,
+      var(--subtitle-line-shadow) 1px -1px 10px;
+}
