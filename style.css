@@ -19,12 +19,6 @@
   --subtitle-line-active-shadow: rgba(0, 0, 0, .5);
 }
 
-@media (min-width: 370px) {
-  body {
-    background-color: red;
-  }
-}
-
 /* Settings 
 don't forget the 16px rule for input because of iOS
 */
