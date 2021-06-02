@@ -6,8 +6,8 @@ TODO: settings <-> exhibition back and forth -- DONE
 TODO: invalid subreddit selection notification -- DONE
 TODO: structure and positioning css
 TODO: mobile first responsive design
-TODO: on mobile, remove the double tap and swipe right / left interactions
-  and replace them with unobstrusive buttons in a corner respecting orientation
+TODO: remove the double tap and swipe right / left interactions
+  replace them with unobstrusive buttons in a corner w/ respect to orientation
   could put this buttons in html, and hide them with css media query
   if doing this, put buttons in separate div with higher z-index than main-vp
   that way, when we clean main-vp the buttons won't get destroyed
@@ -15,11 +15,11 @@ TODO: cancel swipe detection if user is using two fingers (eg zooming)
 TODO: detect orientation changes and redistribute viewports accordingly
 TODO: redo the indicator to use stroke + fill instead of shadows
 TODO: color design
-TODO: remove unneeded dosis weights from html head
+TODO: remove unneeded font weights from html head
 TODO: see what we can do about flairs
 TODO: what about scraping lighter img / video for mobile
 TODO: timer for gfycat loading (clearTimeout)
-TODO? comment code?
+TODO? documentation?
 */
 
 import {config} from './config.js';
@@ -35,7 +35,7 @@ window.addEventListener('load', () => {
   const settings = document.querySelector('#settings');
   const mainViewport = document.querySelector('#main-viewport');
   const launchButton = document.querySelector('#launch');
-  const invalidNotice = document.querySelector('#invalid-input');
+  const invalidNotice = document.querySelector('#invalid-notice');
   document.body.removeChild(mainViewport);
   const cycle = async function() {
     launchButton.removeEventListener('click', cycle);
