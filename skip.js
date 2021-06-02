@@ -17,6 +17,7 @@ const Skipper = class {
   }
   
   destroy() {
+    this.stop();
     void this.displays.splice(0, this.displays.length);
     this.proceed = undefined;
   }
