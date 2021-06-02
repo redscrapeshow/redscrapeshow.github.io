@@ -14,6 +14,7 @@
 <form id="settings">
   <ul>
     <li><label for="subreddits">Write down a list of subreddit names separated by space (each line will be a separate show)</label>
+    <li id="invalid-notice">We couldn't find any content in your selection :-(
     <li><textarea id="subreddits" name="subreddits" rows="3" spellcheck="false" placeholder="aww
 pics wholesomememes"></textarea>
     <li><label>Sort by <select name="sortingMethod">
@@ -37,7 +38,7 @@ pics wholesomememes"></textarea>
     <li><label><input type="checkbox" name="reverse">Go backward to #1</label>
     <label>from #<input type="number" name="reverseStart" value="10" min="1" step="1"></label>
     <label>(loop back<input type="checkbox" name="reverseLoop">)</label>
-    <li><button type="button" id="launch">Show must go on!</button>
+    <li><button type="button" id="launch">SHOW MUST GO ON</button>
     <li><button type="button" id="advanced">Advanced settings</button>
     <li><label><input type="checkbox" name="imgOnly">Images only</label>
     <li><label><input type="checkbox" name="noTrans">Disable transitions</label>

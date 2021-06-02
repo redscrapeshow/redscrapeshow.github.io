@@ -11,7 +11,6 @@ import {goWoke, goSleep} from './sense.js';
 
 let closed = true;
 let settings = undefined;
-let goBack = undefined;
 const artworkByGalleryByIndex = new Map();
 let displayByGallery = new Map();
 let currentIndex = 0;
@@ -20,40 +19,40 @@ let loading = false;
 let skipper = undefined;
 let theater = false;
 
-const runTheShow = async function(loadout, _goBack) {
+const runTheShow = async function(loadout, firstLoadingFinished) {
   closed = false;
   settings = loadout.settings;
-  goBack = _goBack;
-  setLoading(true);
   await setUpGalleries(loadout.subreddits);
   if (artworkByGalleryByIndex.get(0).size === 0) {
-    setLoading(false);
     artworkByGalleryByIndex.clear();
-    goBack();
-    goBack = undefined;
-    return;
+    return firstLoadingFinished(false);
   }
+  if (settings.reverse.enabled) {
+    await loadFirstReverseArtworks();
+  }
+  firstLoadingFinished(true);
   setUpDisplays();
   await displayFirstArtworks();
-  setLoading(false);
   refreshPreloadRange();
   skipper = new Skipper(settings, [...displayByGallery.values()], proceed);
   if (settings.autoSkip.enabled) skipper.start();
-  const eventHandlers = {
-    'down': () => proceed(1),
-    'up': () => proceed(-1),
-    'right': () => proceed(settings.reverse.enabled ? -1 : 1),
-    'left': () => proceed(settings.reverse.enabled ? 1 : -1),
-    'togglePause': () => skipper.toggle(),
-    'toggleTheater': () => (theater ? goRegular : goTheater)(),
-    'swipeRight': goTheater,
-    'swipeLeft': () => (theater ? goRegular : closeTheShow)(),
-    'escape': closeTheShow,
-  };
-  goWoke(event => void eventHandlers[event]());
+  return new Promise(resolve => {
+    const eventHandlers = {
+      'down': () => proceed(1),
+      'up': () => proceed(-1),
+      'right': () => proceed(settings.reverse.enabled ? -1 : 1),
+      'left': () => proceed(settings.reverse.enabled ? 1 : -1),
+      'togglePause': () => skipper.toggle(),
+      'toggleTheater': () => (theater ? goRegular : goTheater)(),
+      'swipeRight': goTheater,
+      'swipeLeft': () => theater ? goRegular() : closeTheShow(resolve),
+      'escape': () => closeTheShow(resolve),
+    };
+    goWoke(event => void eventHandlers[event]());
+  });
 };
 
-const closeTheShow = function(eventHandler) {
+const closeTheShow = function(resolveRunPromise) {
   closed = true;
   goSleep();
   settings = undefined;
@@ -76,8 +75,7 @@ const closeTheShow = function(eventHandler) {
   while (mainVP.firstChild) {
     mainVP.removeChild(mainVP.firstChild);
   }
-  goBack();
-  goBack = undefined;
+  resolveRunPromise();
 };
 
 const setUpGalleries = async function(subredditList) {
@@ -95,6 +93,21 @@ const setUpGalleries = async function(subredditList) {
     }
   }
   void galleries.splice(0, galleries.length);
+};
+
+const loadFirstReverseArtworks = async function() {
+  const firstGallery = [...artworkByGalleryByIndex.get(0).keys()][0];
+  const lastArtworkFirstGallery =
+      firstGallery.getLastArtworkOfRound(settings.reverse.range - 1);
+  reverseStartIndex = (await lastArtworkFirstGallery).index;
+  for (let i = 1; i <= reverseStartIndex; i++) {
+    artworkByGalleryByIndex.set(i, new Map());
+    for (const gallery of artworkByGalleryByIndex.get(0).keys()) {
+      artworkByGalleryByIndex.get(i).set(gallery, gallery.getArtwork(i));
+    }
+  }
+  return Promise.allSettled(
+      [...artworkByGalleryByIndex.get(reverseStartIndex).values()]);
 };
 
 const setUpDisplays = function() {
@@ -140,32 +153,14 @@ const createViewport = function(x, y, w, h) {
 };
 
 const displayFirstArtworks = async function() {
-  if (settings.reverse.enabled) {
-    const firstGallery = [...displayByGallery.keys()][0];
-    const lastArtworkFirstGallery =
-        firstGallery.getLastArtworkOfRound(settings.reverse.range - 1);
-    reverseStartIndex = (await lastArtworkFirstGallery).index;
-    for (let i = 1; i <= reverseStartIndex; i++) {
-      artworkByGalleryByIndex.set(i, new Map());
-      for (const gallery of displayByGallery.keys()) {
-        artworkByGalleryByIndex.get(i).set(gallery, gallery.getArtwork(i));
-      }
+  const transition = settings.noTrans ? '' :
+      settings.reverse.enabled ? 'slide-down' : 'slide-up';
+  currentIndex = settings.reverse.enabled ? reverseStartIndex : 0;
+  for (const [gallery, artwork] of artworkByGalleryByIndex.get(currentIndex)) {
+    displayByGallery.get(gallery).changeArtwork(await artwork, transition);
+    if (settings.reverse.enabled) {
+      displayByGallery.get(gallery).setRound(settings.reverse.range);
     }
-    const lastArtworks = await Promise.allSettled(
-        [...artworkByGalleryByIndex.get(reverseStartIndex).values()]);
-    for (let i = 0; i < lastArtworks.length; i++) {
-      const display = [...displayByGallery.values()][i];
-      display.setRound(settings.reverse.range);
-      display.changeArtwork(
-          lastArtworks[i].value, settings.noTrans ? '' : 'slide-down');
-    }
-    currentIndex = reverseStartIndex;
-  } else {
-    for (const [gallery, artwork] of artworkByGalleryByIndex.get(0)) {
-      displayByGallery.get(gallery).changeArtwork(
-          await artwork, settings.noTrans ? '' : 'slide-up');
-    }
-    currentIndex = 0;
   }
 };
 

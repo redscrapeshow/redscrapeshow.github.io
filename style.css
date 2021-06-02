@@ -23,7 +23,9 @@
 don't forget the 16px rule for input because of iOS
 */
 
-
+#invalid-notice {
+  display: none;
+}
 
 /* Slideshow (generated HTML) 
 fonts considered:
