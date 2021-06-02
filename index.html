@@ -7,7 +7,7 @@
 <title>RedScrapeShow</title>
 <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.gstatic.com">
-<link href="https://fonts.googleapis.com/css2?family=Dosis:wght@200;300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Dosis:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
 <script type="module" src="./main.js"></script>
 <div id="main-viewport"></div>
@@ -15,7 +15,7 @@
   <ul>
     <li><label for="subreddits">Write down a list of subreddit names separated by space (each line will be a separate show)</label>
     <li><textarea id="subreddits" name="subreddits" rows="3" spellcheck="false" placeholder="aww
-earthporn spaceporn"></textarea>
+pics wholesomememes"></textarea>
     <li><label>Sort by <select name="sortingMethod">
       <option selected>Hot
       <option>Top
@@ -39,13 +39,13 @@ earthporn spaceporn"></textarea>
     <label>(loop back<input type="checkbox" name="reverseLoop">)</label>
     <li><button type="button" id="launch">Show must go on!</button>
     <li><button type="button" id="advanced">Advanced settings</button>
-    <li><label><input type="checkbox" name="imgOnly">Images only (for mobile users)</label>
-    <li><label><input type="checkbox" name="noTrans">Disable transitions (for epilepctic users)</label>
+    <li><label><input type="checkbox" name="imgOnly">Images only</label>
+    <li><label><input type="checkbox" name="noTrans">Disable transitions</label>
     <li><label>Preload <input type="number" name="preload" value="3" min="1" step="1"> content backward and forward</label>
     <li><label>Auto-skip behavior for videos: <select name="videoSkip">
-      <option value="loop" selected>loop videos to last at least as long as images
-      <option value="cut">skip videos like images
-      <option value="once">play videos only once then skip
+      <option value="loop" selected>never cut videos
+      <option value="cut">cut videos, skip like images
+      <option value="once">fully play videos once then skip
     </select></label>
   </ul>
 </form>

@@ -170,10 +170,10 @@ const Display = class {
         `/u/${post.author}${(post.flair ? ` (${post.flair})` : ``)}`;
     const subredditRef = `https://www.reddit.com/r/${post.subreddit}`;
     this.subtitleLine.innerHTML =
-        `by ` + anchor(authorRef, authorText) +
-        `, submitted ${createAgeString(post.date)}` +
-        ` on ` + anchor(subredditRef, `/r/${post.subreddit}`) +
-        ` (${post.upvotes.toLocaleString('en-US')}👍)`;
+        `by ${anchor(authorRef, authorText)}` +
+        ` ${createAgeString(post.date)}` +
+        ` on ${anchor(subredditRef, `/r/${post.subreddit}`)}` +
+        ` ❤${post.upvotes.toLocaleString('en-US')}`;
   }
   
   setProgress(progress) {
@@ -278,7 +278,7 @@ const createAgeString = function(birthday) {
   } else if (days <= 31) {
     return `${days} days ago`;
   } else {
-    return `on ${birthday.getFullYear()}-` +
+    return `${birthday.getFullYear()}-` +
         `${birthday.getMonth() + 1}`.padStart(2, '0') + `-` +
         `${birthday.getDate()}`.padStart(2, '0');
   }
