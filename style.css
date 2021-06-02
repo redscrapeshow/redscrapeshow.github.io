@@ -19,7 +19,15 @@
   --subtitle-line-active-shadow: rgba(0, 0, 0, .5);
 }
 
-/* Settings */
+@media (min-width: 370px) {
+  body {
+    background-color: red;
+  }
+}
+
+/* Settings 
+don't forget the 16px rule for input because of iOS
+*/
 
 
 
@@ -118,14 +126,40 @@ dosis: personnality + condensed
 
 .title-line {
   color: var(--title-line);
-  font: 600 22pt dosis, sans-serif;
-  margin: 0;
+  font: 700 8pt/1.1 dosis, sans-serif;
+  margin: 0 0 1pt 0;
   padding: 0;
   text-align: center;
   text-shadow: var(--title-line-shadow) 1px 1px 10px,
       var(--title-line-shadow) -1px 1px 10px,
       var(--title-line-shadow) -1px -1px 10px,
       var(--title-line-shadow) 1px -1px 10px;
+}
+
+.subtitle-line {
+  color: var(--subtitle-line);
+  font: 600 italic 6pt/1 dosis, sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  text-shadow: var(--subtitle-line-shadow) 1px 1px 10px,
+      var(--subtitle-line-shadow) -1px 1px 10px,
+      var(--subtitle-line-shadow) -1px -1px 10px,
+      var(--subtitle-line-shadow) 1px -1px 10px;
+}
+
+.round-number {
+  bottom: 0;
+  color: var(--subtitle-line);
+  font: 400 16pt dosis, sans-serif;
+  margin: 8pt 16pt;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  text-shadow: var(--subtitle-line-shadow) 1px 1px 10px,
+      var(--subtitle-line-shadow) -1px 1px 10px,
+      var(--subtitle-line-shadow) -1px -1px 10px,
+      var(--subtitle-line-shadow) 1px -1px 10px;
 }
 
 .title-line a:link {
@@ -154,18 +188,6 @@ dosis: personnality + condensed
       var(--title-line-active-shadow) -1px 1px 10px,
       var(--title-line-active-shadow) -1px -1px 10px,
       var(--title-line-active-shadow) 1px -1px 10px;
-}
-
-.subtitle-line {
-  color: var(--subtitle-line);
-  font: 600 8pt dosis, sans-serif;
-  margin: 0;
-  padding: 0;
-  text-align: center;
-  text-shadow: var(--subtitle-line-shadow) 1px 1px 10px,
-      var(--subtitle-line-shadow) -1px 1px 10px,
-      var(--subtitle-line-shadow) -1px -1px 10px,
-      var(--subtitle-line-shadow) 1px -1px 10px;
 }
 
 .subtitle-line a:link {
@@ -202,18 +224,4 @@ dosis: personnality + condensed
       var(--subtitle-line-active-shadow) -1px 1px 10px,
       var(--subtitle-line-active-shadow) -1px -1px 10px,
       var(--subtitle-line-active-shadow) 1px -1px 10px;
-}
-
-.round-number {
-  bottom: 0;
-  color: var(--subtitle-line);
-  font: 400 16pt dosis, sans-serif;
-  margin: 8pt 16pt;
-  padding: 0;
-  position: absolute;
-  right: 0;
-  text-shadow: var(--subtitle-line-shadow) 1px 1px 10px,
-      var(--subtitle-line-shadow) -1px 1px 10px,
-      var(--subtitle-line-shadow) -1px -1px 10px,
-      var(--subtitle-line-shadow) 1px -1px 10px;
 }
