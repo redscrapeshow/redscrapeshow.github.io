@@ -3,7 +3,7 @@
 
 import {config} from './config.js';
 
-const getLoadout = function() {
+export const getLoadout = () => {
   const settings = {
     sortingMethod: '',
     sortingPeriod: '',
@@ -11,11 +11,12 @@ const getLoadout = function() {
     autoSkip: {enabled: false, timer: config.DEFAULT_AUTO_SKIP_TIMER},
     reverse: {enabled: false, range: 5, loop: false},
     imgOnly: false,
+    showNav: true,
     noTrans: false,
     preloadRange: config.DEFAULT_PRELOAD_RANGE,
     videoSkip: 'loop',
   };
-  const formData = new FormData(document.querySelector('#settings'));
+  const formData = new FormData(document.querySelector('.settings'));
   const data = new Map();
   for (const [name, value] of formData.entries()) {
     data.set(name, value);
@@ -33,7 +34,8 @@ const getLoadout = function() {
     }
   }
   settings.sortingMethod = data.get('sortingMethod').toLowerCase();
-  settings.sortingPeriod = data.get('sortingPeriod');
+  settings.sortingPeriod =
+      data.has('sortingPeriod') ? data.get('sortingPeriod') : '';
   settings.shuffle = data.has('shuffle');
   settings.autoSkip.enabled = data.has('skip');
   if ((n => isFinite(n) && Number(n) > 0)(data.get('timer'))) {
@@ -46,6 +48,7 @@ const getLoadout = function() {
   }
   settings.reverse.loop = data.has('reverseLoop');
   settings.imgOnly = data.has('imgOnly');
+  settings.showNav = data.has('showNav');
   settings.noTrans = data.has('noTrans');
   if ((n => isFinite(n) && Number.isInteger(Number(n)) && Number(n) >= 0)(
       data.get('preload'))) {
@@ -55,4 +58,33 @@ const getLoadout = function() {
   return {settings, subreddits};
 };
 
-export {getLoadout};
+export const styleUpSettingsScreen = () => {
+  const textArea = document.querySelector('textarea');
+  const adjust = () => textArea.rows = textArea.value.split('\n').length;
+  adjust();
+  textArea.addEventListener('input', adjust);
+  const sortingMethod = document.querySelector('select[name=sortingMethod]');
+  const sortingPeriod = document.querySelector('select[name=sortingPeriod]');
+  const updateSortingPeriodStatus = () => {
+    if (['top', 'controversial'].indexOf(sortingMethod.value) !== -1) {
+      sortingPeriod.parentNode.classList.remove('period-disabled');
+      sortingPeriod.disabled = false;
+    } else {
+      sortingPeriod.parentNode.classList.add('period-disabled');
+      sortingPeriod.disabled = true;
+    }
+  };
+  updateSortingPeriodStatus();
+  sortingMethod.addEventListener('input', updateSortingPeriodStatus);
+  let advanced = false;
+  const toggleAdvanced = () => {
+    advanced = !advanced;
+    document.querySelector('#advanced-options').className =
+        advanced ? 'advanced-visible' : 'advanced-hidden';
+  };
+  document.querySelector('#advanced').addEventListener('click', toggleAdvanced);
+  if (window.matchMedia('(hover: hover)').matches) {
+    document.querySelector('.keyboard-help').style.display = 'block';
+    document.querySelector('input[name="showNav"]').removeAttribute('checked');
+  }
+};

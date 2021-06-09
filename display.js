@@ -3,54 +3,32 @@
 
 import {config} from './config.js';
 
-const Display = class {
+export const Display = class {
 
-  constructor(viewport) {
+  constructor({viewport}) {
+    this.closed = false;
     this.viewport = viewport;
     this.currentMedia = undefined;
     this.medias = new Set();
     this.captionFrame = document.createElement('div');
     this.captionFrame.className = 'caption-frame';
     this.viewport.appendChild(this.captionFrame);
-    this.indicator = document.createElement('canvas');
-    this.ctx = this.indicator.getContext('2d');
-    this.indicator.className = 'indicator';
-    if ('ResizeObserver' in window) {
-      this.indicatorObserver = new ResizeObserver(entries => {
-        if (!entries) return;
-        for (const entry of entries) {
-          if (!entry || !entry.contentRect) return;
-          this.indicator.width = entry.contentRect.width;
-          this.indicator.height = entry.contentRect.height;
-          this.resetIndicatorProperties();
-          this.drawIndicator();
-        }
-      });
-      this.indicatorObserver.observe(this.indicator);
-    } else {
-      this.resetIndicatorProperties();
-    }
-    this.captionFrame.appendChild(this.indicator);
     this.titleLine = document.createElement('div');
     this.titleLine.className = 'title-line';
     this.captionFrame.appendChild(this.titleLine);
     this.subtitleLine = document.createElement('div');
     this.subtitleLine.className = 'subtitle-line';
     this.captionFrame.appendChild(this.subtitleLine);
-    this.roundNumber = document.createElement('div');
-    this.roundNumber.className = 'round-number';
-    this.viewport.appendChild(this.roundNumber);
-    this.progress = 0;
-    this.loading = false;
-    this.showProgress = false;
-    this.theater = false;
-    this.closed = false;
+    this.hideCaption = false;
   }
 
-  changeArtwork(artwork, animation = '') {
+  changeArtwork({artwork, animation = ''}) {
     if (this.closed) return;
-    this.changeCaption(artwork.post);
+    this.changeCaption({post: artwork.post});
     if (this.currentMedia) {
+      if (this.currentMedia instanceof HTMLVideoElement) {
+        this.currentMedia.muted = true;
+      }
       if (animation) {
         for (const media of this.medias) {
           media.parentNode.style.visibility = 'hidden';
@@ -100,9 +78,10 @@ const Display = class {
     }
     this.currentMedia = artwork.media;
     if (this.currentMedia instanceof HTMLVideoElement) {
-      this.currentMedia.controls = this.theater;
       this.currentMedia.currentTime = 0;
+      this.currentMedia.muted = false;
       this.currentMedia.play();
+      if (this.hideCaption) this.currentMedia.controls = true;
     }
   }
   
@@ -118,8 +97,6 @@ const Display = class {
     }
     this.medias.clear();
     this.currentMedia = undefined;
-    this.viewport.removeChild(this.roundNumber);
-    this.roundNumber = undefined;
     while (this.subtitleLine.firstChild) {
       this.subtitleLine.removeChild(this.subtitleLine.firstChild);
     }
@@ -130,32 +107,29 @@ const Display = class {
     }
     this.captionFrame.removeChild(this.titleLine);
     this.titleLine = undefined;
-    if ('ResizeObserver' in window) {
-      this.indicatorObserver.disconnect();
+    if (this.captionFrame.parentNode) {
+      this.viewport.removeChild(this.captionFrame);
     }
-    this.captionFrame.removeChild(this.indicator);
-    this.ctx = undefined;
-    this.indicator = undefined;
-    this.viewport.removeChild(this.captionFrame);
     this.captionFrame = undefined;
+    if (this.viewport.parentNode) {
+      this.viewport.parentNode.removeChild(this.viewport);
+    }
     this.viewport = undefined;
   }
 
-  async preload(artwork) {
-    if (artwork.unloaded) return;
-    const media = (await artwork).media;
-    if (this.closed) return;
-    if (this.medias.has(media)) return;
-    this.medias.add(media);
-    const frame = document.createElement('div');
-    frame.className = 'media-frame';
-    frame.style.visibility = 'hidden';
-    this.viewport.appendChild(frame);
-    media.className = 'media';
-    frame.appendChild(media);
+  preload({artwork}) {
+    if (!this.closed && !artwork.unloaded && !this.medias.has(artwork.media)) {
+      const frame = document.createElement('div');
+      frame.className = 'media-frame';
+      frame.style.visibility = 'hidden';
+      this.viewport.appendChild(frame);
+      artwork.media.className = 'media';
+      frame.appendChild(artwork.media);
+      this.medias.add(artwork.media);
+    }
   }
 
-  async unload(artwork) {
+  async unload({artwork}) {
     const media = (await artwork).media;
     if (!this.medias.has(media)) return;
     this.viewport.removeChild(media.parentNode);
@@ -163,91 +137,34 @@ const Display = class {
     this.medias.delete(media);
   }
 
-  changeCaption(post) {
+  changeCaption({post}) {
     this.titleLine.innerHTML = anchor(post.permalink, post.title);
-    const authorRef = `https://www.reddit.com/user/${post.author}/posts`;
+    const authorRef = `https://www.reddit.com/user/${post.author}`;
     const authorText =
         `/u/${post.author}${(post.flair ? ` (${post.flair})` : ``)}`;
     const subredditRef = `https://www.reddit.com/r/${post.subreddit}`;
     this.subtitleLine.innerHTML =
         `by ${anchor(authorRef, authorText)}` +
-        ` ${createAgeString(post.date)}` +
+        ` ${createAgeString({birthday: post.date})}` +
         ` on ${anchor(subredditRef, `/r/${post.subreddit}`)}` +
         ` ❤${post.upvotes.toLocaleString('en-US')}`;
   }
   
-  setProgress(progress) {
-    this.showProgress = true;
-    this.progress = progress;
-    this.drawIndicator();
-  }
-  
-  hideProgress() {
-    this.showProgress = false;
-    this.drawIndicator();
-  }
-  
-  setLoading(loading) {
-    this.loading = loading;
-  }
-  
-  resetIndicatorProperties() {
-    const bodyStyle = window.getComputedStyle(document.body);
-    this.ctx.strokeStyle = bodyStyle.getPropertyValue('--indicator');
-    this.ctx.lineWidth = this.ctx.canvas.height / 4;
-    this.ctx.lineCap = 'round';
-    this.ctx.shadowColor = bodyStyle.getPropertyValue('--indicator-shadow');
-    this.ctx.shadowBlur = this.ctx.canvas.height / 4;
-  }
-  
-  drawIndicator() {
-    if (this.closed) return;
-    const w = this.ctx.canvas.width;
-    const h = this.ctx.canvas.height;
-    this.ctx.clearRect(0, 0, w, h);
-    if (this.theater) return;
-    if (this.loading) {
-      const d = config.LOADING_INDICATOR_CYCLE_DURATION * 1000;
-      const offset = this.ctx.lineWidth / 2 + this.ctx.shadowBlur + w / 4;
-      const f = t => config.EASE_IN_OUT_INDIC(t < 1/2 ? 2 * t : 2 * (1 - t));
-      const t1 = f((performance.now() % d) / d);
-      const t2 = f(((performance.now() - d / 10) % d) / d);
-      this.ctx.beginPath();
-      this.ctx.moveTo(offset + t2 * (w - 2 * offset), h / 2);
-      this.ctx.lineTo(offset + t1 * (w - 2 * offset), h / 2);
-      this.ctx.stroke();
-    } else if (this.showProgress) {
-      const offset = this.ctx.lineWidth / 2 + this.ctx.shadowBlur;
-      this.ctx.beginPath();
-      this.ctx.moveTo(offset + this.progress * (w / 2 - offset), h / 2);
-      this.ctx.lineTo(w - offset - this.progress * (w / 2 - offset), h / 2);
-      this.ctx.stroke();
-    }
-  }
-  
-  setRound(n) {
-    if (this.closed) return;
-    this.roundNumber.textContent = `${n}`;
-  }
-  
-  goTheater() {
-    if (!this.theater && !this.closed) {
-      this.viewport.removeChild(this.captionFrame);
-      this.viewport.removeChild(this.roundNumber);
-      this.currentMedia.controls = true;
-      this.theater = true;
-    }
-  }
-  
-  goRegular() {
-    if (this.theater && !this.closed) {
+  toggleCaption() {
+    this.hideCaption = !this.hideCaption;
+    if (this.hideCaption) {
+      this.captionFrame.parentNode.removeChild(this.captionFrame);
+      if (this.currentMedia instanceof HTMLVideoElement) {
+        this.currentMedia.controls = true;
+      }
+    } else {
       this.viewport.appendChild(this.captionFrame);
-      this.viewport.appendChild(this.roundNumber);
-      this.currentMedia.controls = false;
-      this.theater = false;
+      if (this.currentMedia instanceof HTMLVideoElement) {
+        this.currentMedia.controls = false;
+      }
     }
   }
-
+  
 };
 
 const transitionCss = animation =>
@@ -256,7 +173,7 @@ const transitionCss = animation =>
 
 const anchor = (ref, txt) => `<a target="_blank" href="${ref}">${txt}</a>`;
 
-const createAgeString = function(birthday) {
+const createAgeString = function({birthday}) {
   const now = new Date(Date.now());
   const age = now - birthday;
   const minutes = age / 60000;
@@ -283,5 +200,3 @@ const createAgeString = function(birthday) {
         `${birthday.getDate()}`.padStart(2, '0');
   }
 };
-
-export {Display};

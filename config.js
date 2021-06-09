@@ -1,7 +1,7 @@
 /*
 */
 
-const config = {
+export const config = {
   NUMBER_OF_LISTINGS_BEFORE_GIVING_UP: 5,
   IMAGE_URL_REGEXS: [/\.jpg$/, /\.jpeg$/, /\.png$/, /\.gif$/],
   IMGUR_VIDEO_URL_REGEXS: [/\.gifv$/],
@@ -14,11 +14,18 @@ const config = {
   DEFAULT_AUTO_SKIP_TIMER: 10,
   TRANSITION_DURATION: .8,
   DEFAULT_PRELOAD_RANGE: 3,
-  LOADING_INDICATOR_CYCLE_DURATION: 1.2,
-  EASE_IN_OUT_INDIC: (n => t =>
+  LOADING_CYCLE_DURATION: 1.2,
+  LOADING_EASE_IN_OUT: (n => t =>
       t < 1/2 ? Math.pow(2 * t, n) / 2 : 1 - Math.pow(2 * (1 - t), n) / 2)(3),
   DOUBLE_TAP_INTERVAL_IN_MS: 1000,
-  SWIPE_THRESHOLD_FRACTION: 1/4,
+  SWIPE_THRESHOLD_FRACTION: 1 / 4,
+  XMLNS: 'http://www.w3.org/2000/svg',
+  
+  SWIPE_UP: '▲',
+  SWIPE_DOWN: '▼',
+  SHOW_CAPTION: '⭶', // '🗎⭱',⭶⭱
+  HIDE_CAPTION: '⭹', // '🗎⭳',⭹⭳
+  BACK_TO_SETTINGS: '⮌',
 
   InvalidSubredditError: undefined,
   MediaLoadingError: undefined,
@@ -64,5 +71,3 @@ config.NoValidGalleryError = class extends Error {
     this.name = 'NoValidGalleryError';
   }
 };
-
-export {config};

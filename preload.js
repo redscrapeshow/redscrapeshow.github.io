@@ -4,9 +4,9 @@
 import {config} from './config.js';
 
 let verbose = true;
-const setVerbose = value => void (verbose = value);
+export const setVerbose = value => void (verbose = value);
 
-const loadMediaFromRedditPost = async function(post) {
+export const loadMediaFromRedditPost = async ({post}) => {
   const urlRegexsToLoader = new Map();
   urlRegexsToLoader.set(config.IMAGE_URL_REGEXS, loadImage);
   urlRegexsToLoader.set(config.IMGUR_VIDEO_URL_REGEXS, loadVideoFromImgur);
@@ -16,7 +16,7 @@ const loadMediaFromRedditPost = async function(post) {
   for (const [regexs, loader] of urlRegexsToLoader) {
     if (regexs.some(regex => regex.test(post.url))) {
       try {
-        return await loader(post);
+        return await loader({post});
       } catch (error) {
         if (error instanceof config.MediaLoadingError) {
           error = new config.MediaLoadingError(post.url, post.subreddit);
@@ -33,13 +33,13 @@ const convertToHttps =
 const mediaRejectCallback =
     reject => (() => void reject(new config.MediaLoadingError()));
 
-const loadImage = async function(post) {
-  return new Promise(function(resolve, reject) {
+const loadImage = async ({post}) => {
+  return new Promise((resolve, reject) => {
     if (verbose) {
       console.log(`loading image from r/${post.subreddit} (at ${post.url})`);
     }
     const media = document.createElement('img');
-    media.addEventListener('load', function() {
+    media.addEventListener('load', () => {
       if (verbose) {
         console.log(`successfully loaded image from r/${post.subreddit} ` +
             `(at ${post.url})`);
@@ -51,28 +51,30 @@ const loadImage = async function(post) {
   });
 };
 
-const loadVideoFromImgur = async function(post) {
-  return loadVideoFromSources([
+const loadVideoFromImgur = async ({post}) => {
+  return loadVideoFromSources({sources: [
     convertToHttps(post.url.replace(/\.\w+$/, '.mp4')),
     convertToHttps(post.url.replace(/\.\w+$/, '.webm')),
-  ]);
+  ]});
 };
 
-const loadVideoFromVReddit = async function(post) {
-  return loadVideoFromSources([post.vredditVideoUrl]);
+const loadVideoFromVReddit = async ({post}) => {
+  return loadVideoFromSources({sources: [post.vredditVideoUrl]});
 };
 
-const loadVideoFromGfycat = async function(post) {
-  return loadVideoFromSources(await getSourcesFromGfycatSite(post, 'gfycat'));
+const loadVideoFromGfycat = async ({post}) => {
+  const sources = await getSourcesFromGfycatSite({post, gfycatSite: 'gfycat'});
+  return loadVideoFromSources({sources});
 };
 
-const loadVideoFromRedgifs = async function(post) {
-  return loadVideoFromSources(await getSourcesFromGfycatSite(post, 'redgifs'));
+const loadVideoFromRedgifs = async ({post}) => {
+  const sources = await getSourcesFromGfycatSite({post, gfycatSite: 'redgifs'});
+  return loadVideoFromSources({sources});
 };
 
-const getSourcesFromGfycatSite = async function(post, gfycatSite = 'gfycat') {
+const getSourcesFromGfycatSite = async ({post, gfycatSite = 'gfycat'}) => {
   if (post.gfySources && post.gfySources.length) return post.gfySources;
-  return new Promise(function(resolve, reject) {
+  return new Promise((resolve, reject) => {
     const gfycatId = post.url.match(/\/([A-Za-z]+)$/)[1];
     const sourceRequestUrl =
         `https://api.${gfycatSite}.com/v1/gfycats/${gfycatId}`;
@@ -82,7 +84,7 @@ const getSourcesFromGfycatSite = async function(post, gfycatSite = 'gfycat') {
     sourceRequest.addEventListener('error', mediaRejectCallback(reject));
     sourceRequest.addEventListener('abort', mediaRejectCallback(reject));
     sourceRequest.addEventListener('timeout', mediaRejectCallback(reject));
-    sourceRequest.addEventListener('load', function () {
+    sourceRequest.addEventListener('load', () => {
       const sources = [];
       if (sourceRequest.response && sourceRequest.response.gfyItem) {
         const gfyItem = sourceRequest.response.gfyItem;
@@ -105,16 +107,14 @@ const getSourcesFromGfycatSite = async function(post, gfycatSite = 'gfycat') {
   });
 };
 
-const loadVideoFromSources = async function(sources) {
+const loadVideoFromSources = async ({sources}) => {
   return new Promise(function(resolve, reject) {
     const video = document.createElement('video');
     video.controls = false;
     video.loop = true;
     video.muted = false;
-    video.addEventListener('canplay', function() {
-      if (verbose) {
-        console.log(`Enough loaded to play video from ${sources}`);
-      }
+    video.addEventListener('canplay', () => {
+      if (verbose) console.log(`Enough loaded to play video from ${sources}`);
       resolve(video);
     });
     video.addEventListener('error', mediaRejectCallback(reject));
@@ -124,11 +124,7 @@ const loadVideoFromSources = async function(sources) {
       sourceElement.addEventListener('error', mediaRejectCallback(reject));
       video.appendChild(sourceElement);
     }
-    if (verbose) {
-      console.log(`Loading video from ${sources}`);
-    }
+    if (verbose) console.log(`Loading video from ${sources}`);
     video.load();
   });
 };
-
-export {loadMediaFromRedditPost, setVerbose};

@@ -10,19 +10,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Dosis:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
 <script type="module" src="./main.js"></script>
-<div id="main-viewport"></div>
-<form id="settings">
+<form class="settings">
   <ul>
-    <li><label for="subreddits">Write down a list of subreddit names separated by space (each line will be a separate show)</label>
+    <li><label for="subreddits">Write down a list of subreddit names separated by space (each line will be a separate show):</label>
     <li id="invalid-notice">We couldn't find any content in your selection :-(
-    <li><textarea id="subreddits" name="subreddits" rows="3" spellcheck="false" placeholder="aww
-pics wholesomememes"></textarea>
+    <li><textarea id="subreddits" name="subreddits" rows="1" spellcheck="false" autofocus placeholder="aww pics wholesomememes"></textarea>
     <li><label>Sort by <select name="sortingMethod">
-      <option selected>Hot
-      <option>Top
-      <option>New
-      <option>Rising
-      <option>Controversial
+      <option value="hot" selected>Hot
+      <option value="top">Top
+      <option value="new">New
+      <option value="rising">Rising
+      <option value="controversial">Controversial
     </select></label>
     <label>of <select name="sortingPeriod">
       <option value="hour">past hour
@@ -35,12 +33,23 @@ pics wholesomememes"></textarea>
     <li><label><input type="checkbox" name="shuffle" checked>Shuffle subreddits</label>
     <li><label><input type="checkbox" name="skip" checked>Skip every</label>
     <label><input type="number" name="timer" value="10" min="0" step="any"> seconds</label>
-    <li><label><input type="checkbox" name="reverse">Go backward to #1</label>
-    <label>from #<input type="number" name="reverseStart" value="10" min="1" step="1"></label>
+    <li><label><input type="checkbox" name="reverse">Go backward </label>
+    <label>from #<input type="number" name="reverseStart" value="5" min="1" step="1"> to #1</label>
     <label>(loop back<input type="checkbox" name="reverseLoop">)</label>
-    <li><button type="button" id="launch">SHOW MUST GO ON</button>
-    <li><button type="button" id="advanced">Advanced settings</button>
+    <li><button type="button" id="launch"><div id="loading-left"></div>SHOW MUST GO ON<div id="loading-right"></div></button>
+    <li id="advanced-container"><button type="button" id="advanced">Advanced settings</button>
+      <div class="keyboard-help">🖮
+        <ul class="keyboard-tooltip">
+          <li>arrow keys to navigate between posts
+          <li>space to pause timer
+          <li>enter to show / hide caption(s)
+          <li>backspace, escape to go back to settings screen
+        </ul>
+      </div>
+  </ul>
+  <ul id="advanced-options" class="advanced-hidden">
     <li><label><input type="checkbox" name="imgOnly">Images only</label>
+    <li><label><input type="checkbox" name="showNav" checked>Show navigation buttons</label>
     <li><label><input type="checkbox" name="noTrans">Disable transitions</label>
     <li><label>Preload <input type="number" name="preload" value="3" min="1" step="1"> content backward and forward</label>
     <li><label>Auto-skip behavior for videos: <select name="videoSkip">
@@ -50,3 +59,4 @@ pics wholesomememes"></textarea>
     </select></label>
   </ul>
 </form>
+<div class="main-viewport"></div>

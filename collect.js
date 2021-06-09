@@ -5,9 +5,9 @@ import {config} from './config.js';
 import {createScraper} from './scrape.js';
 import {loadMediaFromRedditPost} from './preload.js';
 
-const Gallery = class {
+export const Gallery = class {
 
-  constructor(subreddits, settings) {
+  constructor({subreddits, settings}) {
     this.settings = settings;
     this.artworksByScraper = new Map();
     this.firstRecycledIndexByScraper = new Map();
@@ -38,7 +38,7 @@ const Gallery = class {
     let media = undefined;
     if (artwork.unloaded) {
       try {
-        media = await loadMediaFromRedditPost(artwork.post);
+        media = await loadMediaFromRedditPost({post: artwork.post});
       } catch (error) {
         if (error instanceof config.MediaLoadingError) {
           console.warn(error);
@@ -173,7 +173,7 @@ const Gallery = class {
       if (this.closed) return;
       let media = undefined;
       try {
-        media = await loadMediaFromRedditPost(artwork.post);
+        media = await loadMediaFromRedditPost({post: artwork.post});
       } catch (error) {
         if (error instanceof config.MediaLoadingError) {
           console.warn(error);
@@ -202,5 +202,3 @@ const unloadMedia = function(media) {
     media.load();
   }
 };
-
-export {Gallery};

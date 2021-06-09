@@ -1,312 +1,269 @@
 /*
-for viewports https://mathoverflow.net/questions/206166/
-breaking-a-rectangle-into-smaller-rectangles-with-small-diagonals/206254#206254
 */
 
 import {config} from './config.js';
 import {Gallery} from './collect.js';
 import {Display} from './display.js';
-import {Skipper} from './skip.js';
+import {Timer} from './timer.js';
+import {MainUI} from './exhibit-ui.js';
+import {createViewports} from './viewport.js';
 import {goWoke, goSleep} from './sense.js';
 
-let closed = true;
-let settings = undefined;
-const artworkByGalleryByIndex = new Map();
-let displayByGallery = new Map();
-let currentIndex = 0;
-let reverseStartIndex = undefined;
-let loading = false;
-let skipper = undefined;
-let theater = false;
-
-const runTheShow = async function(loadout, firstLoadingFinished) {
-  closed = false;
-  settings = loadout.settings;
-  await setUpGalleries(loadout.subreddits);
-  if (artworkByGalleryByIndex.get(0).size === 0) {
-    artworkByGalleryByIndex.clear();
-    return firstLoadingFinished(false);
+export const loadTheShow = async ({settings, subreddits}) => {
+  const state = {
+    artworkByGalleryByIndex: new Map(),
+    closed: undefined,
+    currentIndex: undefined,
+    displayByGallery: undefined,
+    reverseStartIndex: undefined,
+  };
+  await setUpGalleries({state, settings, subreddits});
+  if (state.artworkByGalleryByIndex.get(0).size === 0) {
+    state.artworkByGalleryByIndex.clear();
+    throw new config.NoValidGalleryError();
   }
-  if (settings.reverse.enabled) {
-    await loadFirstReverseArtworks();
-  }
-  firstLoadingFinished(true);
-  setUpDisplays();
-  await displayFirstArtworks();
-  refreshPreloadRange();
-  skipper = new Skipper(settings, [...displayByGallery.values()], proceed);
-  if (settings.autoSkip.enabled) skipper.start();
-  return new Promise(resolve => {
-    const eventHandlers = {
-      'down': () => proceed(1),
-      'up': () => proceed(-1),
-      'right': () => proceed(settings.reverse.enabled ? -1 : 1),
-      'left': () => proceed(settings.reverse.enabled ? 1 : -1),
-      'togglePause': () => skipper.toggle(),
-      'toggleTheater': () => (theater ? goRegular : goTheater)(),
-      'swipeRight': goTheater,
-      'swipeLeft': () => theater ? goRegular() : closeTheShow(resolve),
-      'escape': () => closeTheShow(resolve),
-    };
-    goWoke(event => void eventHandlers[event]());
-  });
+  if (settings.reverse.enabled) await loadLastArtworks({state, settings});
+  return state;
 };
 
-const closeTheShow = function(resolveRunPromise) {
-  closed = true;
-  goSleep();
-  settings = undefined;
-  loading = false;
-  currentIndex = 0;
-  reverseStartIndex = undefined;
-  theater = false;
-  skipper.destroy();
-  skipper = undefined;
-  for (const artworkByGallery of artworkByGalleryByIndex.values()) {
-    artworkByGallery.clear();
+export const runTheShow = async ({state, settings}) => {
+  state.closed = false;
+  setUpDisplays({state});
+  await displayFirstArtworks({state, settings});
+  refreshPreloadRange({state, settings});
+  const timer = new Timer({settings});
+  const ui = new MainUI({state, settings, timer});
+  const eventHandler = createEventHandler({state, settings, timer, ui});
+  const eventListeners = goWoke({eventHandler, timer, ui});
+  if (settings.autoSkip.enabled) {
+    timer.start({state});
+    ui.launchTimer();
   }
-  artworkByGalleryByIndex.clear();
-  for (const [gallery, display] of displayByGallery) {
-    display.close();
-    gallery.close();
-  }
-  displayByGallery.clear();
-  const mainVP = document.querySelector('#main-viewport');
-  while (mainVP.firstChild) {
-    mainVP.removeChild(mainVP.firstChild);
-  }
-  resolveRunPromise();
+  return new Promise(resolve => void eventHandler.setClosingSequence(() => {
+    state.closed = true;
+    goSleep({eventListeners});
+    ui.destroy();
+    timer.disable();
+    for (const stashes of state.artworkByGalleryByIndex.values()) {
+      stashes.clear();
+    }
+    state.artworkByGalleryByIndex.clear();
+    for (const [gallery, display] of state.displayByGallery) {
+      display.close();
+      gallery.close();
+    }
+    state.displayByGallery.clear();
+    resolve();
+  }));
 };
 
-const setUpGalleries = async function(subredditList) {
-  artworkByGalleryByIndex.set(0, new Map());
-  const galleries = subredditList.map(line => new Gallery(line, settings));
+const setUpGalleries = async ({state, settings, subreddits}) => {
+  state.artworkByGalleryByIndex.set(0, new Map());
+  const galleries =
+      subreddits.map(line => new Gallery({subreddits: line, settings}));
   for (const gallery of galleries) {
-    artworkByGalleryByIndex.get(0).set(gallery, gallery.getArtwork(0));
+    state.artworkByGalleryByIndex.get(0).set(gallery, gallery.getArtwork(0));
   }
-  const firstLoadResults =
-      await Promise.allSettled([...artworkByGalleryByIndex.get(0).values()]);
+  const firstPromises = [...state.artworkByGalleryByIndex.get(0).values()];
+  const firstLoadResults = await Promise.allSettled(firstPromises);
   for (let i = 0; i < firstLoadResults.length; i++) {
     if (firstLoadResults[i].status === 'rejected') {
       console.warn(firstLoadResults[i].reason);
-      artworkByGalleryByIndex.get(0).delete(galleries[i]);
-    }
-  }
-  void galleries.splice(0, galleries.length);
-};
-
-const loadFirstReverseArtworks = async function() {
-  const firstGallery = [...artworkByGalleryByIndex.get(0).keys()][0];
-  const lastArtworkFirstGallery =
-      firstGallery.getLastArtworkOfRound(settings.reverse.range - 1);
-  reverseStartIndex = (await lastArtworkFirstGallery).index;
-  for (let i = 1; i <= reverseStartIndex; i++) {
-    artworkByGalleryByIndex.set(i, new Map());
-    for (const gallery of artworkByGalleryByIndex.get(0).keys()) {
-      artworkByGalleryByIndex.get(i).set(gallery, gallery.getArtwork(i));
-    }
-  }
-  return Promise.allSettled(
-      [...artworkByGalleryByIndex.get(reverseStartIndex).values()]);
-};
-
-const setUpDisplays = function() {
-  const galleries = [...artworkByGalleryByIndex.get(0).keys()];
-  if (galleries.length === 1) {
-    return displayByGallery.set(
-        galleries[0], new Display(document.querySelector('#main-viewport')));
-  }
-  let rows = Math.floor(Math.sqrt(galleries.length));
-  let columns = Math.floor(Math.sqrt(galleries.length));
-  if (!Number.isInteger(Math.sqrt(galleries.length))) columns++;
-  if (rows * columns < galleries.length) rows++;
-  const deficientRows = rows * columns - galleries.length;
-  const rowH = 1 / rows;
-  const landscape = window.innerWidth >= window.innerHeight;
-  let i = 0;
-  for (let row = 0; row < rows; row++) {
-    const nColumns = row < deficientRows ? columns - 1 : columns;
-    for (let column = 0; column < nColumns; column++) {
-      let vp = undefined;
-      const colW = row < deficientRows ? 1 / (columns - 1) : 1 / columns;
-      if (landscape) {
-        vp = createViewport(column * colW, row * rowH, colW, rowH);
-      } else {
-        vp = createViewport(row * rowH, column * colW, rowH, colW);
-      }
-      displayByGallery.set(galleries[i], new Display(vp));
-      i += 1;
+      state.artworkByGalleryByIndex.get(0).delete(galleries[i]);
     }
   }
 };
 
-const createViewport = function(x, y, w, h) {
-  const vp = document.createElement('div');
-  document.querySelector('#main-viewport').appendChild(vp);
-  vp.style.position = 'absolute';
-  vp.style.overflow = 'hidden';
-  vp.style.left = `${x * 100}%`;
-  vp.style.right = `${(1 - (x + w)) * 100}%`;
-  vp.style.top = `${y * 100}%`;
-  vp.style.bottom = `${(1 - (y + h)) * 100}%`;
-  return vp;
+const loadLastArtworks = async ({state, settings}) => {
+  const reverseStartArtworks = [];
+  for (const gallery of state.artworkByGalleryByIndex.get(0).keys()) {
+    reverseStartArtworks.push(
+        gallery.getLastArtworkOfRound(settings.reverse.range - 1));
+  }
+  const lastIndexes =
+      (await Promise.all(reverseStartArtworks)).map(artwork => artwork.index);
+  state.reverseStartIndex = Math.max(...lastIndexes);
+  for (let i = 1; i <= state.reverseStartIndex; i++) {
+    state.artworkByGalleryByIndex.set(i, new Map());
+    for (const gallery of state.artworkByGalleryByIndex.get(0).keys()) {
+      state.artworkByGalleryByIndex.get(i).set(gallery, gallery.getArtwork(i));
+    }
+  }
+  return Promise.all(
+      [...state.artworkByGalleryByIndex.get(state.reverseStartIndex).values()]);
 };
 
-const displayFirstArtworks = async function() {
-  const transition = settings.noTrans ? '' :
+const setUpDisplays = ({state}) => {
+  state.displayByGallery = new Map();
+  const galleries = [...state.artworkByGalleryByIndex.get(0).keys()];
+  const vps = createViewports({quantity: galleries.length});
+  for (let i = 0; i < galleries.length; i++) {
+    state.displayByGallery.set(galleries[i], new Display({viewport: vps[i]}));
+  }
+};
+
+const displayFirstArtworks = async ({state, settings}) => {
+  const animation = settings.noTrans ? '' :
       settings.reverse.enabled ? 'slide-down' : 'slide-up';
-  currentIndex = settings.reverse.enabled ? reverseStartIndex : 0;
-  for (const [gallery, artwork] of artworkByGalleryByIndex.get(currentIndex)) {
-    displayByGallery.get(gallery).changeArtwork(await artwork, transition);
-    if (settings.reverse.enabled) {
-      displayByGallery.get(gallery).setRound(settings.reverse.range);
-    }
+  state.currentIndex = settings.reverse.enabled ? state.reverseStartIndex : 0;
+  for (const [gallery, artwork] of
+      state.artworkByGalleryByIndex.get(state.currentIndex)) {
+    const display = state.displayByGallery.get(gallery);
+    display.changeArtwork({artwork: await artwork, animation});
   }
 };
 
-const refreshPreloadRange = async function() {
-  if (closed) return;
-  const forward = [];
-  const backward = [];
-  for (let i = 1; i <= settings.preloadRange; i++) {
-    forward.push(currentIndex + i);
-    if (currentIndex - i >= 0) {
-      backward.push(currentIndex - i);
-    } else if (settings.reverse.enabled && settings.reverse.loop) {
-      let negativeIndex = currentIndex - i;
-      while (negativeIndex < 0) {
-        negativeIndex += (reverseStartIndex + 1);
-      }
-      backward.push(negativeIndex);
+const resolveCurrentArtworks = async ({state}) => {
+  if (!state.artworkByGalleryByIndex.has(state.currentIndex)) {
+    state.artworkByGalleryByIndex.set(state.currentIndex, new Map());
+    for (const gallery of state.displayByGallery.keys()) {
+      state.artworkByGalleryByIndex.get(state.currentIndex).set(
+        gallery, gallery.getArtwork(state.currentIndex));
     }
   }
-  const preloadIndexes = settings.reverse.enabled ?
-      [...backward, ...forward] : [...forward, ...backward];
-  const furthestIndex = Math.max(...artworkByGalleryByIndex.keys());
-  for (let n = 0; n <= furthestIndex; n++) {
-    if (n === currentIndex || preloadIndexes.indexOf(n) !== -1) continue;
-    if (artworkByGalleryByIndex.has(n)) {
-      const nthArtworkByGallery = artworkByGalleryByIndex.get(n);
-      artworkByGalleryByIndex.delete(n);
-      for (const [gallery, artwork] of nthArtworkByGallery) {
-        displayByGallery.get(gallery).unload(artwork);
-        gallery.unloadMediaOfArtwork(n);
+  const resolvedArtworks = await Promise.all(
+      [...state.artworkByGalleryByIndex.get(state.currentIndex).values()]);
+  const galleries = [...state.displayByGallery.keys()];
+  const resolvedArtworkByGallery = new Map();
+  for (let i = 0; i < resolvedArtworks.length; i++) {
+    resolvedArtworkByGallery.set(galleries[i], resolvedArtworks[i]);
+  }
+  return resolvedArtworkByGallery;
+};
+
+const refreshPreloadRange = async ({state, settings}) => {
+  if (state.closed) return;
+  const preloadSequence = determinePreloadIndexes({state, settings});
+  const unloadSequence = determineUnloadIndexes({state, preloadSequence});
+  for (const i of unloadSequence) {
+    if (state.artworkByGalleryByIndex.has(i)) {
+      for (const [gallery, artwork] of state.artworkByGalleryByIndex.get(i)) {
+        state.displayByGallery.get(gallery).unload({artwork});
+        gallery.unloadMediaOfArtwork(i);
       }
+      state.artworkByGalleryByIndex.delete(i);
     }
   }
-  for (const index of preloadIndexes) {
-    if (!artworkByGalleryByIndex.has(index)) {
-      const artworkByGallery = new Map();
-      for (const gallery of displayByGallery.keys()) {
-        artworkByGallery.set(gallery, gallery.getArtwork(index));
+  for (const i of preloadSequence) {
+    if (!state.artworkByGalleryByIndex.has(i)) {
+      state.artworkByGalleryByIndex.set(i, new Map());
+      for (const gal of state.displayByGallery.keys()) {
+        state.artworkByGalleryByIndex.get(i).set(gal, gal.getArtwork(i));
       }
-      artworkByGalleryByIndex.set(index, artworkByGallery);
     }
-    const preloadedArtworks = await Promise.allSettled(
-        [...artworkByGalleryByIndex.get(index).values()]);
-    if (closed) return;
-    if (!artworkByGalleryByIndex.get(index)) return;
+    const artworkPromises = [...state.artworkByGalleryByIndex.get(i).values()];
+    const displays = [...state.displayByGallery.values()];
+    const preloadedArtworks = await Promise.all(artworkPromises);
     for (let i = 0; i < preloadedArtworks.length; i++) {
-      const gallery = [...artworkByGalleryByIndex.get(index).keys()][i];
-      displayByGallery.get(gallery).preload(preloadedArtworks[i].value);
+      displays[i].preload({artwork: preloadedArtworks[i]});
     }
   }
 };
 
-let summedUpChange = 0;
-let proceeding = false;
-const proceed = async function(change) {
-  if (closed) return;
-  summedUpChange += change;
-  if (proceeding) return;
-  proceeding = true;
-  skipper.stop();
-  setLoading(true);
-  const indexBeforeProceeding = currentIndex;
-  const newArtworkByGallery = new Map();
-  while (summedUpChange !== 0) {
-    const change = summedUpChange;
-    currentIndex += change;
-    if (currentIndex < 0) {
-      if (settings.reverse.enabled && settings.reverse.loop) {
-        while (currentIndex < 0) {
-          currentIndex += (reverseStartIndex + 1);
-        }
-      } else {
-        currentIndex = 0;
+const adjustIndexIfNegative = (index, {state, settings}) => {
+  if (index >= 0) {
+    return index;
+  } else if (settings.reverse.enabled && settings.reverse.loop) {
+    const reverseSize = state.reverseStartIndex + 1;
+    return index + reverseSize * Math.ceil(-index / reverseSize);
+  } else {
+    return 0;
+  }
+};
+
+const determinePreloadIndexes = ({state, settings}) => {
+  const forward = new Set();
+  const backward = new Set();
+  for (let i = 1; i <= settings.preloadRange; i++) {
+    forward.add(state.currentIndex + i);
+    backward.add(
+        adjustIndexIfNegative(state.currentIndex - i, {state, settings}));
+  }
+  backward.delete(state.currentIndex);
+  return new Set(settings.reverse.enabled ?
+      [...backward, ...forward] : [...forward, ...backward]);
+};
+
+const determineUnloadIndexes = ({state, preloadSequence}) => {
+  const furthestIndex = Math.max(...state.artworkByGalleryByIndex.keys());
+  const unloadIndexes = new Set();
+  for (let i = 0; i <= furthestIndex; i++) {
+    if (!preloadSequence.has(i) && i !== state.currentIndex) {
+      unloadIndexes.add(i);
+    }
+  }
+  return unloadIndexes;
+};
+
+const createProceedFunction = ({state, settings, timer, ui}) => {
+  let summedUpChange = 0;
+  let proceeding = false;
+  return async ({change}) => {
+    if (state.closed) return;
+    summedUpChange += change;
+    if (proceeding) return;
+    proceeding = true;
+    timer.stop();
+    ui.stopTimer();
+    ui.startLoading();
+    const indexBeforeProceeding = state.currentIndex;
+    let resolvedArtworks = new Map();
+    while (summedUpChange !== 0) {
+      const stepChange = summedUpChange;
+      state.currentIndex = adjustIndexIfNegative(
+          state.currentIndex + stepChange, {state, settings});
+      resolvedArtworks.clear();
+      resolvedArtworks = await resolveCurrentArtworks({state});
+      if (state.closed) return resolvedArtworks.clear();
+      summedUpChange -= stepChange;
+    }
+    if (state.currentIndex !== indexBeforeProceeding) {
+      const animation = settings.noTrans ? '' :
+          state.currentIndex > indexBeforeProceeding ? 'slide-up' :
+          'slide-down';
+      for (const [gallery, display] of state.displayByGallery) {
+        const artwork = resolvedArtworks.get(gallery);
+        display.changeArtwork({artwork, animation});
       }
     }
-    if (!artworkByGalleryByIndex.has(currentIndex)) {
-      artworkByGalleryByIndex.set(currentIndex, new Map());
-      const currentArtworkByGallery = artworkByGalleryByIndex.get(currentIndex);
-      for (const gallery of displayByGallery.keys()) {
-        currentArtworkByGallery.set(gallery, gallery.getArtwork(currentIndex));
+    refreshPreloadRange({state, settings});
+    proceeding = false;
+    ui.refreshRoundNumber();
+    if (settings.reverse.enabled &&
+        !settings.reverse.loop &&
+        state.currentIndex === 0) {
+      timer.disable();
+    }
+    ui.stopLoading();
+    if (timer.enabled) {
+      timer.start({state});
+      ui.launchTimer();
+    }
+  };
+};
+
+const createEventHandler = ({state, settings, timer, ui}) => {
+  let close = () => {}
+  const proceed = createProceedFunction({state, settings, timer, ui});
+  const eventHandlers = {
+    'down': () => void proceed({change: 1}),
+    'up': () => void proceed({change: -1}),
+    'right': () => void proceed({change: settings.reverse.enabled ? -1 : 1}),
+    'left': () => void proceed({change: settings.reverse.enabled ? 1 : -1}),
+    'togglePause': () => {
+      timer.toggle({state});
+      ui.toggleTimer();
+    },
+    'toggleCaption': () => {
+      for (const display of state.displayByGallery.values()) {
+        display.toggleCaption();
       }
-    }
-    const newArtworks = await Promise.allSettled(
-        [...artworkByGalleryByIndex.get(currentIndex).values()]);
-    if (closed) return;
-    for (let i = 0; i < newArtworks.length; i++) {
-      newArtworkByGallery.set(
-          [...artworkByGalleryByIndex.get(currentIndex).keys()][i],
-          newArtworks[i].value);
-    }
-    summedUpChange -= change;
-  }
-  for (const [gallery, display] of displayByGallery) {
-    const newArtwork = newArtworkByGallery.get(gallery);
-    if (newArtwork.index > indexBeforeProceeding) {
-      display.changeArtwork(newArtwork, settings.noTrans ? '' : 'slide-up');
-    } else if (newArtwork.index < indexBeforeProceeding) {
-      display.changeArtwork(newArtwork, settings.noTrans ? '' : 'slide-down');
-    }
-  }
-  refreshPreloadRange(displayByGallery);
-  proceeding = false;
-  setLoading(false);
-  if (settings.reverse.enabled) {
-    updateRoundNumber();
-    if (!settings.reverse.loop && currentIndex == 0) {
-      skipper.disable();
-    }
-  }
-  skipper.start();
+      ui.toggleToggleCaptionSymbol();
+    },
+    'escape': () => void close(),
+  };
+  return {
+    handle: event => void eventHandlers[event](),
+    setClosingSequence: _close => close = _close,
+  };
 };
-
-const setLoading = function(l) {
-  loading = l;
-  if (loading) {
-    window.requestAnimationFrame(function updateLoading() {
-      if (closed) return;
-      for (const display of displayByGallery.values()) {
-        display.setLoading(loading);
-        display.drawIndicator();
-      }
-      if (loading) window.requestAnimationFrame(updateLoading);
-    });
-  }
-};
-
-const updateRoundNumber = function() {
-  const roundIndex =
-      [...displayByGallery.keys()][0].roundIndexOfNthArtwork(currentIndex);
-  for (const display of displayByGallery.values()) {
-    display.setRound(roundIndex + 1);
-  }
-};
-
-const goTheater = function() {
-  theater = true;
-  for (const display of displayByGallery.values()) {
-    display.goTheater();
-  }
-};
-
-const goRegular = function() {
-  theater = false;
-  for (const display of displayByGallery.values()) {
-    display.goRegular();
-  }
-};
-
-export {runTheShow};

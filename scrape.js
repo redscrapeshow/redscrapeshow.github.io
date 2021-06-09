@@ -4,14 +4,15 @@
 import {config} from './config.js';
 
 let verbose = true;
-const setVerbose = value => void (verbose = value);
+export const setVerbose = value => void (verbose = value);
 
-const createScraper = async function* ({
-    subredditName,
-    sortingMethod = 'hot',
-    sortingPeriod = '',
-    imgOnly = false,
-  }) {
+export const createScraper =
+    async function* ({
+      subredditName,
+      sortingMethod = 'hot',
+      sortingPeriod = '',
+      imgOnly = false,
+    }) {
   let postTally = 0;
   let lastPostName = '';
   let consecutiveFullyInvalidListings = 0;
@@ -50,38 +51,34 @@ const createScraper = async function* ({
   }
 };
 
-const getListing = async function(
-    {
+const getListing =
+    async function({
       subredditName,
       sortingMethod = 'hot',
       sortingPeriod = '',
       after = '',
     }) {
-  return new Promise(function(resolve, reject) {
+  return new Promise((resolve, reject) => {
     const listingRequest = new XMLHttpRequest();
     listingRequest.responseType = 'json';
     const listingUrl =
         `https://www.reddit.com/r/${subredditName}/${sortingMethod}.json?` +
         `limit=100&t=${sortingPeriod}&after=${after}`;
     listingRequest.open('GET', listingUrl);
-    listingRequest.addEventListener('load', function() {
-      if (verbose) {
-        console.log(`received listing from r/${subredditName}`);
-      }
+    listingRequest.addEventListener('load', () => {
+      if (verbose) console.log(`received listing from r/${subredditName}`);
       if (!listingRequest.response ||
           !listingRequest.response.data ||
           !listingRequest.response.data.children ||
           !listingRequest.response.data.children.length) {
-        return reject();
+        return void reject();
       }
       resolve(listingRequest.response.data.children);
     });
     listingRequest.addEventListener('abort', () => void reject());
     listingRequest.addEventListener('error', () => void reject());
     listingRequest.send();
-    if (verbose) {
-      console.log(`sending listing request to r/${subredditName}`);
-    }
+    if (verbose) console.log(`sending listing request to r/${subredditName}`);
   });
 };
 
@@ -101,14 +98,13 @@ const getRelevantPostData =
               child.data.media.reddit_video.fallback_url : undefined,
     });
 
-const isValidURL =
-    (url, imgOnly) => (imgOnly ? config.IMAGE_URL_REGEXS : [
-      ...config.IMAGE_URL_REGEXS,
-      ...config.IMGUR_VIDEO_URL_REGEXS,
-      ...config.VREDDIT_URL_REGEXS,
-      ...config.GFYCAT_URL_REGEXS,
-      ...config.REDGIFS_URL_REGEXS,
-    ]).some(regex => regex.test(url));
-    
-
-export {createScraper, setVerbose};
+const isValidURL = (url, imgOnly) => (imgOnly ?
+        config.IMAGE_URL_REGEXS :
+        [
+          ...config.IMAGE_URL_REGEXS,
+          ...config.IMGUR_VIDEO_URL_REGEXS,
+          ...config.VREDDIT_URL_REGEXS,
+          ...config.GFYCAT_URL_REGEXS,
+          ...config.REDGIFS_URL_REGEXS,
+        ]
+    ).some(regex => regex.test(url));
