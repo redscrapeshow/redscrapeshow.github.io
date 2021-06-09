@@ -1,39 +1,4 @@
 /*
-TODO: multiple galleries screen partition -- DONE
-TODO: settings -- DONE
-TODO: controls for mobile, settings for mobile -- DONE
-TODO: settings <-> exhibition back and forth -- DONE
-TODO: invalid subreddit selection notification -- DONE
-TODO: fix the uneven galleries reverse last index behavior -- DONE
-TODO: turn the main callback loop into an async loop -- DONE
-TODO: structure and positioning css -- DONE
-TODO: detect orientation changes and remake viewports accordingly -- DONE
-TODO: redo checkboxes because those toggles are hideous -- DONE
-TODO: transition to active state for button feel -- DONE
-TODO: settings loading indicator in svg -- DONE
-TODO: clean up exhibit with modularity -- DONE
-TODO: apply google js style guide for functions and parameters -- DONE
-TODO: complete rework of controls: -- DONE
-    new exhibition layout -- DONE
-    create UI elements and place them -- DONE
-    bind UI elements to event handlers -- DONE
-    handle caption toggling -- DONE
-    new timer UI with svg and blackjack (c'est de la bite svg go canvas) -- DONE
-    change toggle caption text content when activated -- DONE
-    video control mode (yeah no not worth it + unsettling) -- DONE
-    connect mouse controls -- DONE
-    connect touch controls -- DONE
-    connect keyboard controls -- DONE
-    let's get graphic! (don't forget pseudo for timer) -- DONE
-TODO: (?) hover to learn about controls -- DONE
-TODO: remake settings flexbox to not suck so much -- DONE
-TODO: color design -- DONE
-TODO: see what we can do about flairs
-TODO: what about scraping lighter img / video for mobile
-TODO: timer for gfycat loading (clearTimeout)
-TODO: mobile first responsive design
-TODO: clean unneeded config items
-TODO? documentation?
 */
 
 import {config} from './config.js';

@@ -14,18 +14,17 @@ export const config = {
   DEFAULT_AUTO_SKIP_TIMER: 10,
   TRANSITION_DURATION: .8,
   DEFAULT_PRELOAD_RANGE: 3,
+  SWIPE_THRESHOLD_FRACTION: 1 / 4,
+  
+  XMLNS: 'http://www.w3.org/2000/svg',
+  SWIPE_UP: 'M 25 75 L 50 25 L 75 75',
+  SWIPE_DOWN: 'M 25 25 L 50 75 L 75 25',
+  SHOW_CAPTION: 'M 25 25 L 50 25 M 30 60 L 30 40 L 50 40 M 30 40 L 75 75',
+  HIDE_CAPTION: 'M 25 75 L 50 75 M 30 40 L 30 60 L 50 60 M 30 60 L 75 25',
+  TO_SETTINGS: 'M 50 75 C 90 75, 90 35, 50 35 L 25 35 M 35 25 L 25 35 L 35 45',
   LOADING_CYCLE_DURATION: 1.2,
   LOADING_EASE_IN_OUT: (n => t =>
       t < 1/2 ? Math.pow(2 * t, n) / 2 : 1 - Math.pow(2 * (1 - t), n) / 2)(3),
-  DOUBLE_TAP_INTERVAL_IN_MS: 1000,
-  SWIPE_THRESHOLD_FRACTION: 1 / 4,
-  XMLNS: 'http://www.w3.org/2000/svg',
-  
-  SWIPE_UP: '▲',
-  SWIPE_DOWN: '▼',
-  SHOW_CAPTION: '⭶', // '🗎⭱',⭶⭱
-  HIDE_CAPTION: '⭹', // '🗎⭳',⭹⭳
-  BACK_TO_SETTINGS: '⮌',
 
   InvalidSubredditError: undefined,
   MediaLoadingError: undefined,

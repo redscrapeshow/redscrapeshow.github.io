@@ -23,26 +23,25 @@ export const MainUI = class {
     if (settings.showNav) {
       this.swipeUpButton = this.addSimpleButton({
         name: 'swipe-up',
-        symbol: config.SWIPE_UP,
+        path: config.SWIPE_UP,
       });
     }
     this.timerWidget = this.addSimpleButton({
       name: 'pause-resume-timer',
-      symbol: '',
     });
     this.timerWidget.classList.add('timer-widget');
     if (settings.showNav) {
       this.swipeDownButton = this.addSimpleButton({
         name: 'swipe-down',
-        symbol: config.SWIPE_DOWN,
+        path: config.SWIPE_DOWN,
       });
       this.toggleCaptionButton = this.addSimpleButton({
         name: 'toggle-caption',
-        symbol: config.HIDE_CAPTION,
+        path: config.HIDE_CAPTION,
       });
       this.settingsButton = this.addSimpleButton({
         name: 'back-to-settings',
-        symbol: config.BACK_TO_SETTINGS,
+        path: config.TO_SETTINGS,
       });
     }
     if (settings.reverse.enabled) this.createRoundIndicator();
@@ -133,17 +132,28 @@ export const MainUI = class {
   }
   
   toggleToggleCaptionSymbol() {
-    if (this.toggleCaptionButton.textContent === config.SHOW_CAPTION) {
-      this.toggleCaptionButton.textContent = config.HIDE_CAPTION;
-    } else if (this.toggleCaptionButton.textContent === config.HIDE_CAPTION) {
-      this.toggleCaptionButton.textContent = config.SHOW_CAPTION;
+    const path = this.toggleCaptionButton.firstChild.firstChild;
+    if (path.getAttribute('d') === config.SHOW_CAPTION) {
+      path.setAttribute('d', config.HIDE_CAPTION);
+    } else if (path.getAttribute('d') === config.HIDE_CAPTION) {
+      path.setAttribute('d', config.SHOW_CAPTION);
     }
   }
   
-  addSimpleButton({name, symbol}) {
+  addSimpleButton({name, path}) {
     const button = document.createElement('button');
     button.setAttribute('name', name);
-    button.textContent = symbol;
+    if (path) {
+      const svg = document.createElementNS(config.XMLNS, 'svg');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      const p = document.createElementNS(config.XMLNS, 'path');
+      p.setAttribute('d', path);
+      p.setAttribute('fill', 'none');
+      svg.appendChild(p);
+      button.appendChild(svg);
+    }
     this.container.appendChild(button);
     this.createdElements.push(button);
     this.callbackByButton.set(button, () => {});
