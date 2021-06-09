@@ -88,8 +88,13 @@ const getSourcesFromGfycatSite = async ({post, gfycatSite = 'gfycat'}) => {
       const sources = [];
       if (sourceRequest.response && sourceRequest.response.gfyItem) {
         const gfyItem = sourceRequest.response.gfyItem;
-        if (gfyItem.mp4Url) sources.push(gfyItem.mp4Url);
-        if (gfyItem.webmUrl) sources.push(gfyItem.webmUrl);
+        if (window.matchMedia('(max-width:900px)').matches &&
+            gfyItem.mobileUrl) {
+          sources.push(gfyItem.mobileUrl);
+        } else {
+          if (gfyItem.mp4Url) sources.push(gfyItem.mp4Url);
+          if (gfyItem.webmUrl) sources.push(gfyItem.webmUrl);
+        }
       }
       if (!sources.length) return void mediaRejectCallback(reject)();
       post.gfySources = sources;
